@@ -1,6 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import AuthProvider from './contexts/AuthContext'
+import useAuth from './hooks/useAuth'
 import Layout from './components/Layout'
-import { Box, Typography } from '@mui/material'
+import Login from './pages/Login'
+import { Box, CircularProgress, Typography } from '@mui/material'
 
 // Placeholder components - we'll create proper ones later
 const Dashboard = () => (
@@ -24,17 +27,72 @@ const Customers = () => (
   </Box>
 )
 
+function LoadingScreen() {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  )
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) {
+    return <LoadingScreen />
+  }
+
+  if (!session) {
+    // Save the attempted URL
+    return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  return <>{children}</>
+}
+
+function AppRoutes() {
+  const { loading } = useAuth()
+
+  if (loading) {
+    return <LoadingScreen />
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/tickets" element={<Tickets />} />
+                <Route path="/customers" element={<Customers />} />
+              </Routes>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  )
+}
+
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/tickets" element={<Tickets />} />
-          <Route path="/customers" element={<Customers />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   )
 }
 
