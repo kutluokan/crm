@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
-import { AppBar, Box, CssBaseline, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography } from '@mui/material';
-import { Menu as MenuIcon, Dashboard, ConfirmationNumber, People } from '@mui/icons-material';
+import { AppBar, Box, CssBaseline, Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography } from '@mui/material';
+import { Dashboard, ConfirmationNumber, People } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 
 const drawerWidth = 240;
