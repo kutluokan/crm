@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -38,6 +39,7 @@ const statusColors = {
 } as const;
 
 export default function CustomerList() {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -146,6 +148,7 @@ export default function CustomerList() {
                   key={customer.id}
                   hover
                   sx={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/customers/${customer.id}`)}
                 >
                   <TableCell>{customer.name}</TableCell>
                   <TableCell>{customer.company_name || '-'}</TableCell>

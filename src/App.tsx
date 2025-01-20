@@ -10,6 +10,7 @@ import Login from './pages/Login'
 import TicketList from './pages/tickets/TicketList'
 import TicketDetail from './pages/tickets/TicketDetail'
 import CustomerList from './pages/customers/CustomerList'
+import CustomerDetail from './pages/customers/CustomerDetail'
 import { Box, CircularProgress, Typography } from '@mui/material'
 
 // Placeholder components - we'll create proper ones later
@@ -71,6 +72,7 @@ function AppRoutes() {
                 <Route path="/tickets" element={<TicketList />} />
                 <Route path="/tickets/:id" element={<TicketDetail />} />
                 <Route path="/customers" element={<CustomerList />} />
+                <Route path="/customers/:id" element={<CustomerDetail />} />
               </Routes>
             </Layout>
           </ProtectedRoute>
