@@ -18,6 +18,16 @@ export interface Ticket {
   assigned_to?: string
 }
 
+export interface Employee {
+  id: string
+  created_at: string
+  email: string
+  full_name: string
+  avatar_url?: string
+  department?: string
+  role: 'support' | 'admin' | 'manager'
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -30,6 +40,11 @@ export type Database = {
         Row: Ticket
         Insert: Omit<Ticket, 'id' | 'created_at'>
         Update: Partial<Omit<Ticket, 'id' | 'created_at'>>
+      }
+      employees: {
+        Row: Employee
+        Insert: Omit<Employee, 'id' | 'created_at'>
+        Update: Partial<Omit<Employee, 'id' | 'created_at'>>
       }
     }
   }

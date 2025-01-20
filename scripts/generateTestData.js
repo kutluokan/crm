@@ -58,7 +58,7 @@ async function ensureTestCustomerExists() {
 
 async function ensureTestUserExists() {
   const { data: users } = await supabase
-    .from('users')
+    .from('employees')
     .select('id')
     .eq('email', 'test.user@example.com')
     .limit(1);
@@ -81,18 +81,18 @@ async function ensureTestUserExists() {
 
     console.log('Created auth user');
 
-    // The trigger will automatically create the user in our users table
+    // The trigger will automatically create the user in our employees table
     // Wait a moment for the trigger to complete
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Update the role since it's not handled by the trigger
     const { error: updateError } = await supabase
-      .from('users')
+      .from('employees')
       .update({ role: 'support' })
       .eq('id', authUser.user.id);
 
     if (updateError) {
-      console.error('Error updating user role:', updateError);
+      console.error('Error updating employee role:', updateError);
       throw updateError;
     }
 

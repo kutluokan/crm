@@ -61,7 +61,7 @@ export default function CustomerList() {
           phone,
           company_name,
           status,
-          assigned_to:users!assigned_to (
+          assigned_to:employees!assigned_to (
             full_name
           )
         `);
@@ -110,7 +110,7 @@ export default function CustomerList() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => {/* TODO: Implement create customer */}}
+          onClick={() => navigate('/customers/new')}
         >
           New Customer
         </Button>

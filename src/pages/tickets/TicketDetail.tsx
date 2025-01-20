@@ -95,11 +95,11 @@ export default function TicketDetail() {
             email,
             company_name
           ),
-          assigned_to:users!assigned_to (
+          assigned_to:employees!assigned_to (
             id,
             full_name
           ),
-          created_by:users!created_by (
+          created_by:employees!created_by (
             full_name
           )
         `)
@@ -128,14 +128,14 @@ export default function TicketDetail() {
   const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('id, full_name')
         .order('full_name');
 
       if (error) throw error;
       setUsers(data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching employees:', error);
     }
   };
 

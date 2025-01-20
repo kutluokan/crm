@@ -1,17 +1,12 @@
-import { ReactNode } from 'react';
 import { AppBar, Box, CssBaseline, Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography, IconButton, Avatar, Menu, MenuItem } from '@mui/material';
 import { Dashboard, ConfirmationNumber, People, Logout } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { useState } from 'react';
 
 const drawerWidth = 240;
 
-interface LayoutProps {
-  children: ReactNode;
-}
-
-export default function Layout({ children }: LayoutProps) {
+export default function Layout() {
   const { signOut, user } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -121,7 +116,7 @@ export default function Layout({ children }: LayoutProps) {
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
-        {children}
+        <Outlet />
       </Box>
     </Box>
   );

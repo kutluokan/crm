@@ -42,7 +42,7 @@ export function useTickets(params: TicketQueryParams) {
             name,
             email
           ),
-          assigned_to:users!assigned_to (
+          assigned_to:employees!assigned_to (
             full_name
           )
         `, { count: 'exact' });
@@ -102,11 +102,11 @@ export function useTicket(id: string) {
             phone,
             company_name
           ),
-          assigned_to:users!assigned_to (
+          assigned_to:employees!assigned_to (
             id,
             full_name
           ),
-          created_by:users!created_by (
+          created_by:employees!created_by (
             full_name
           ),
           resolved_at,

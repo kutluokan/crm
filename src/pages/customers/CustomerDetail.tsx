@@ -28,18 +28,15 @@ interface DetailedCustomer {
   created_at: string;
   name: string;
   email: string;
-  phone: string;
+  phone: string | null;
   company_name: string | null;
   status: 'active' | 'inactive' | 'lead';
   notes: string | null;
-  website: string | null;
-  industry: string | null;
-  address: string | null;
+  last_contacted_at: string | null;
   assigned_to: {
     id: string;
     full_name: string;
   } | null;
-  custom_fields: Record<string, any> | null;
 }
 
 interface User {
@@ -83,11 +80,8 @@ export default function CustomerDetail() {
           company_name,
           status,
           notes,
-          website,
-          industry,
-          address,
-          custom_fields,
-          assigned_to:users!assigned_to (
+          last_contacted_at,
+          assigned_to:employees!assigned_to (
             id,
             full_name
           )
@@ -116,14 +110,14 @@ export default function CustomerDetail() {
   const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('id, full_name')
         .order('full_name');
 
       if (error) throw error;
       setUsers(data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching employees:', error);
     }
   };
 
@@ -239,7 +233,7 @@ export default function CustomerDetail() {
               <TextField
                 label="Phone"
                 fullWidth
-                value={editedFields.phone ?? customer.phone}
+                value={editedFields.phone ?? customer.phone ?? ''}
                 onChange={(e) => handleFieldChange('phone', e.target.value)}
               />
               <FormControl fullWidth>
@@ -272,24 +266,12 @@ export default function CustomerDetail() {
                 onChange={(e) => handleFieldChange('company_name', e.target.value)}
               />
               <TextField
-                label="Industry"
-                fullWidth
-                value={editedFields.industry ?? customer.industry ?? ''}
-                onChange={(e) => handleFieldChange('industry', e.target.value)}
-              />
-              <TextField
-                label="Website"
-                fullWidth
-                value={editedFields.website ?? customer.website ?? ''}
-                onChange={(e) => handleFieldChange('website', e.target.value)}
-              />
-              <TextField
-                label="Address"
+                label="Notes"
                 fullWidth
                 multiline
-                rows={2}
-                value={editedFields.address ?? customer.address ?? ''}
-                onChange={(e) => handleFieldChange('address', e.target.value)}
+                rows={4}
+                value={editedFields.notes ?? customer.notes ?? ''}
+                onChange={(e) => handleFieldChange('notes', e.target.value)}
               />
             </Stack>
           </Box>
@@ -324,14 +306,6 @@ export default function CustomerDetail() {
                   ))}
                 </Select>
               </FormControl>
-              <TextField
-                label="Notes"
-                fullWidth
-                multiline
-                rows={4}
-                value={editedFields.notes ?? customer.notes ?? ''}
-                onChange={(e) => handleFieldChange('notes', e.target.value)}
-              />
             </Stack>
           </Box>
         </Stack>
