@@ -124,10 +124,10 @@ export default function CreateTicket() {
     }
   };
 
-  const handleChange = (field: keyof NewTicket, value: string) => {
+  const handleChange = (field: keyof typeof ticket, value: string | null) => {
     setTicket(prev => ({
       ...prev,
-      [field]: value
+      [field]: field === 'assigned_to' ? (value || undefined) : value
     }));
   };
 

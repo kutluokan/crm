@@ -20,8 +20,6 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useTickets } from '../../hooks/useTickets';
-import NewTicketDialog from './NewTicketDialog';
-import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import React from 'react';
 
@@ -46,7 +44,6 @@ export default function TicketList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [status, setStatus] = useState<string>('');
   const [priority, setPriority] = useState<string>('');
-  const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
 
   const { data, isLoading, isError } = useTickets({
     page,
@@ -55,8 +52,6 @@ export default function TicketList() {
     status,
     priority,
   });
-
-  const queryClient = useQueryClient();
 
   // Calculate current page based on data
   const currentPage = React.useMemo(() => {
@@ -72,14 +67,6 @@ export default function TicketList() {
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
-
-  const handleNewTicketClick = () => {
-    setIsNewTicketOpen(true);
-  };
-
-  const handleNewTicketClose = () => {
-    setIsNewTicketOpen(false);
   };
 
   const handleRowClick = (ticketId: string) => {
@@ -234,14 +221,6 @@ export default function TicketList() {
           rowsPerPageOptions={[5, 10, 25, 50]}
         />
       </Paper>
-
-      <NewTicketDialog
-        open={isNewTicketOpen}
-        onClose={handleNewTicketClose}
-        onTicketCreated={() => {
-          queryClient.invalidateQueries({ queryKey: ['tickets'] });
-        }}
-      />
     </Box>
   );
 } 

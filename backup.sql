@@ -139,6 +139,19 @@ $$;
 
 ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
 
+
+CREATE OR REPLACE VIEW "public"."auth_users" AS
+ SELECT "users"."id",
+    "users"."email",
+    "users"."raw_user_meta_data",
+    "users"."created_at",
+    "users"."last_sign_in_at",
+    COALESCE(("users"."raw_user_meta_data" ->> 'full_name'::"text"), ("users"."email")::"text") AS "display_name"
+   FROM "auth"."users";
+
+
+ALTER TABLE "public"."auth_users" OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -299,6 +312,28 @@ ALTER TABLE ONLY "public"."tickets"
 
 ALTER TABLE ONLY "public"."tickets"
     ADD CONSTRAINT "tickets_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE CASCADE;
+
+
+
+CREATE POLICY "Employees can be deleted by admins" ON "public"."employees" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."employees" "employees_1"
+  WHERE (("employees_1"."id" = "auth"."uid"()) AND ("employees_1"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Employees can be inserted by admins" ON "public"."employees" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."employees" "employees_1"
+  WHERE (("employees_1"."id" = "auth"."uid"()) AND ("employees_1"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Employees can be updated by admins" ON "public"."employees" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."employees" "employees_1"
+  WHERE (("employees_1"."id" = "auth"."uid"()) AND ("employees_1"."role" = 'admin'::"text")))));
+
+
+
+CREATE POLICY "Employees can be viewed by authenticated users" ON "public"."employees" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -581,6 +616,12 @@ GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
 
 
 
+
+
+
+GRANT ALL ON TABLE "public"."auth_users" TO "anon";
+GRANT ALL ON TABLE "public"."auth_users" TO "authenticated";
+GRANT ALL ON TABLE "public"."auth_users" TO "service_role";
 
 
 

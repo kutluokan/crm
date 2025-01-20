@@ -7,11 +7,14 @@ import AuthProvider from './contexts/AuthContext'
 import useAuth from './hooks/useAuth'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
 import TicketList from './pages/tickets/TicketList'
 import TicketDetail from './pages/tickets/TicketDetail'
 import CreateTicket from './pages/tickets/CreateTicket'
 import UserList from './pages/users/UserList'
-import { Box, CircularProgress, Typography } from '@mui/material'
+import Help from './pages/demo/Help'
+import Docs from './pages/demo/Docs'
+import { Box, CircularProgress } from '@mui/material'
 
 // Create a new query client instance
 const queryClient = new QueryClient()
@@ -34,14 +37,6 @@ function RequireAuth() {
     </Layout>
   )
 }
-
-// Placeholder components - we'll create proper ones later
-const Dashboard = () => (
-  <Box>
-    <Typography variant="h4">Dashboard</Typography>
-    <Typography>Welcome to your CRM Dashboard</Typography>
-  </Box>
-)
 
 function LoadingScreen() {
   return (
@@ -73,6 +68,10 @@ function App() {
                 <Route path="tickets/new" element={<CreateTicket />} />
                 <Route path="tickets/:id" element={<TicketDetail />} />
                 <Route path="users" element={<UserList />} />
+                <Route path="demo">
+                  <Route path="help" element={<Help />} />
+                  <Route path="docs" element={<Docs />} />
+                </Route>
               </Route>
             </Routes>
           </Router>

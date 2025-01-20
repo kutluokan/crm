@@ -8,26 +8,19 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Stack,
   Typography,
+  Stack,
+  Chip,
+  Button,
+  CircularProgress,
+  Alert,
+  Avatar,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
-  Avatar,
-  Chip,
-  Alert,
-  CircularProgress,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface AuthUser {
   id: string;
@@ -49,9 +42,7 @@ interface Employee {
 }
 
 export default function EmployeeList() {
-  const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   // Query to get all auth users
   const { data: authUsers = [], isLoading: isLoadingUsers } = useQuery({
@@ -97,7 +88,6 @@ export default function EmployeeList() {
         ]);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
     } catch (error: any) {
       console.error('Error converting user to employee:', error);
       setError(error.message);
@@ -113,7 +103,6 @@ export default function EmployeeList() {
         .eq('id', employeeId);
 
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
     } catch (error: any) {
       console.error('Error removing employee:', error);
       setError(error.message);

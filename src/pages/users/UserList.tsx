@@ -61,15 +61,23 @@ interface Customer {
   assigned_to: string | null;
 }
 
+interface NewCustomer {
+  name: string;
+  email: string;
+  company_name: string;
+  phone: string;
+  status: Customer['status'];
+}
+
 export default function UserList() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState(0);
-  const [newCustomer, setNewCustomer] = useState({
+  const [newCustomer, setNewCustomer] = useState<NewCustomer>({
     name: '',
     email: '',
     company_name: '',
     phone: '',
-    status: 'lead' as const,
+    status: 'active'
   });
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -175,7 +183,7 @@ export default function UserList() {
         email: '',
         company_name: '',
         phone: '',
-        status: 'lead',
+        status: 'active',
       });
       setCustomerDialogOpen(false);
     } catch (error: any) {
@@ -224,6 +232,7 @@ export default function UserList() {
           name: user.raw_user_meta_data.full_name || user.email,
           email: user.email,
           status: status,
+          created_at: new Date().toISOString(),
         }]);
 
       if (error) throw error;

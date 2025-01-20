@@ -1,15 +1,21 @@
-import { AppBar, Box, CssBaseline, Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography, IconButton, Avatar, Menu, MenuItem } from '@mui/material';
-import { Dashboard, ConfirmationNumber, People, Logout } from '@mui/icons-material';
-import { Link, Outlet } from 'react-router-dom';
+import { AppBar, Box, CssBaseline, Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography, IconButton, Avatar, Menu, MenuItem, Divider, ListItemButton, ListSubheader } from '@mui/material';
+import { Dashboard, ConfirmationNumber, People, Logout, Help as HelpIcon, MenuBook as DocsIcon } from '@mui/icons-material';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { useState } from 'react';
-import { People as PeopleIcon } from '@mui/icons-material';
+import { supabase } from '../lib/supabase';
 
 const drawerWidth = 240;
 
-export default function Layout() {
-  const { signOut, user } = useAuth();
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export default function Layout({ children }: LayoutProps) {
+  const { user } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -19,16 +25,68 @@ export default function Layout() {
     setAnchorEl(null);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     handleClose();
-    signOut();
+    await supabase.auth.signOut();
+    navigate('/login');
   };
 
-  const menuItems = [
+  const mainMenuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
-    { text: 'Tickets', icon: <ConfirmationNumber />, path: '/tickets' },
     { text: 'Users', icon: <People />, path: '/users' },
+    { text: 'Tickets', icon: <ConfirmationNumber />, path: '/tickets' },
   ];
+
+  const demoMenuItems = [
+    { text: 'Help', icon: <HelpIcon />, path: '/demo/help' },
+    { text: 'Documentation', icon: <DocsIcon />, path: '/demo/docs' },
+  ];
+
+  const drawer = (
+    <div>
+      <Toolbar>
+        <Typography variant="h6" noWrap component="div">
+          CRM Admin
+        </Typography>
+      </Toolbar>
+      <Divider />
+      <List>
+        {mainMenuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              selected={location.pathname === item.path}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+      <Divider />
+      <List
+        subheader={
+          <ListSubheader>
+            Customer Interface Demo
+          </ListSubheader>
+        }
+      >
+        {demoMenuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              component={Link}
+              to={item.path}
+              selected={location.pathname === item.path}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </div>
+  );
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -91,29 +149,14 @@ export default function Layout() {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            width: drawerWidth,
-            boxSizing: 'border-box',
-          },
+          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
         }}
       >
-        <Toolbar />
-        <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {menuItems.map((item) => (
-              <ListItem component={Link} to={item.path} key={item.path} sx={{ color: 'inherit', textDecoration: 'none' }}>
-                <ListItemIcon>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
+        {drawer}
       </Drawer>
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Toolbar />
-        <Outlet />
+        {children}
       </Box>
     </Box>
   );
