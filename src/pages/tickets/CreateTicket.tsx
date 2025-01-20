@@ -23,16 +23,23 @@ interface Customer {
   company_name: string | null;
 }
 
+interface Employee {
+  id: string;
+  full_name: string;
+}
+
 interface NewTicket {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   customer_id: string;
+  assigned_to: string | null;
 }
 
 export default function CreateTicket() {
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ticket, setTicket] = useState<NewTicket>({
@@ -40,10 +47,12 @@ export default function CreateTicket() {
     description: '',
     priority: 'medium',
     customer_id: '',
+    assigned_to: null,
   });
 
   useEffect(() => {
     fetchCustomers();
+    fetchEmployees();
   }, []);
 
   const fetchCustomers = async () => {
@@ -57,6 +66,20 @@ export default function CreateTicket() {
       setCustomers(data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
+    }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, full_name')
+        .order('full_name');
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
     }
   };
 
@@ -164,6 +187,22 @@ export default function CreateTicket() {
                     {customers.map((customer) => (
                       <MenuItem key={customer.id} value={customer.id}>
                         {customer.name} {customer.company_name ? `(${customer.company_name})` : ''}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Assign To</InputLabel>
+                  <Select
+                    value={ticket.assigned_to || ''}
+                    label="Assign To"
+                    onChange={(e) => handleChange('assigned_to', e.target.value || null)}
+                  >
+                    <MenuItem value="">Unassigned</MenuItem>
+                    {employees.map((employee) => (
+                      <MenuItem key={employee.id} value={employee.id}>
+                        {employee.full_name}
                       </MenuItem>
                     ))}
                   </Select>
