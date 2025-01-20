@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
-export type Ticket = {
+export interface Ticket {
   id: string;
   created_at: string;
   title: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: string;
+  priority: string;
   customer: {
     name: string;
     email: string;
@@ -14,93 +14,71 @@ export type Ticket = {
   assigned_to: {
     full_name: string;
   } | null;
-};
+}
 
-type TicketQueryParams = {
+export interface TicketQueryParams {
   page: number;
   rowsPerPage: number;
-  statusFilter: string;
-  priorityFilter: string;
-  searchQuery: string;
-};
-
-const fetchTickets = async ({
-  page,
-  rowsPerPage,
-  statusFilter,
-  priorityFilter,
-  searchQuery,
-}: TicketQueryParams) => {
-  // First, get the total count
-  let countQuery = supabase
-    .from('tickets')
-    .select('id', { count: 'exact' });
-
-  // Apply filters to count query
-  if (statusFilter !== 'all') {
-    countQuery = countQuery.eq('status', statusFilter);
-  }
-  if (priorityFilter !== 'all') {
-    countQuery = countQuery.eq('priority', priorityFilter);
-  }
-  if (searchQuery) {
-    countQuery = countQuery.ilike('title', `%${searchQuery}%`);
-  }
-
-  const { count, error: countError } = await countQuery;
-
-  if (countError) {
-    throw new Error(`Error getting count: ${countError.message}`);
-  }
-
-  // Then fetch the paginated data
-  let query = supabase
-    .from('tickets')
-    .select(`
-      id,
-      created_at,
-      title,
-      status,
-      priority,
-      customer:customers!customer_id (
-        name,
-        email
-      ),
-      assigned_to:users!assigned_to (
-        full_name
-      )
-    `)
-    .order('created_at', { ascending: false })
-    .range(page * rowsPerPage, (page * rowsPerPage) + rowsPerPage - 1);
-
-  // Apply filters
-  if (statusFilter !== 'all') {
-    query = query.eq('status', statusFilter);
-  }
-  if (priorityFilter !== 'all') {
-    query = query.eq('priority', priorityFilter);
-  }
-  if (searchQuery) {
-    query = query.ilike('title', `%${searchQuery}%`);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error(`Error fetching tickets: ${error.message}`);
-  }
-
-  return {
-    tickets: data as Ticket[],
-    totalCount: count || 0,
-  };
-};
+  searchTerm?: string;
+  status?: string;
+  priority?: string;
+}
 
 export function useTickets(params: TicketQueryParams) {
   return useQuery({
     queryKey: ['tickets', params],
-    queryFn: () => fetchTickets(params),
-    keepPreviousData: true, // Keep previous data while fetching new data
+    queryFn: async () => {
+      const { page, rowsPerPage, searchTerm, status, priority } = params;
+
+      let query = supabase
+        .from('tickets')
+        .select(`
+          id,
+          created_at,
+          title,
+          status,
+          priority,
+          customer:customers!customer_id (
+            name,
+            email
+          ),
+          assigned_to:users!assigned_to (
+            full_name
+          )
+        `, { count: 'exact' });
+
+      if (searchTerm) {
+        query = query.ilike('title', `%${searchTerm}%`);
+      }
+
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      if (priority) {
+        query = query.eq('priority', priority);
+      }
+
+      const { data, error, count } = await query
+        .range(page * rowsPerPage, (page + 1) * rowsPerPage - 1)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new Error(`Error fetching tickets: ${error.message}`);
+      }
+
+      // Transform the data to match our Ticket type
+      const typedData = data?.map(item => ({
+        ...item,
+        customer: Array.isArray(item.customer) ? item.customer[0] : item.customer,
+        assigned_to: Array.isArray(item.assigned_to) ? item.assigned_to[0] : item.assigned_to
+      })) as Ticket[];
+
+      return {
+        tickets: typedData,
+        totalCount: count || 0
+      };
+    }
   });
 }
 

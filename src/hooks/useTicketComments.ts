@@ -41,7 +41,7 @@ export function useTicketComments(ticketId: string) {
       const typedData = data?.map(item => ({
         ...item,
         user: Array.isArray(item.user) ? item.user[0] : item.user
-      })) as unknown as TicketComment[];
+      })) as TicketComment[];
 
       return typedData;
     },

@@ -23,12 +23,12 @@ interface Customer {
   created_at: string;
   name: string;
   email: string;
-  phone: string | null;
-  company_name: string | null;
-  status: 'active' | 'inactive' | 'lead';
+  phone: string;
+  company_name: string;
+  status: string;
   assigned_to: {
     full_name: string;
-  } | null;
+  };
 }
 
 const statusColors = {
@@ -63,11 +63,17 @@ export default function CustomerList() {
           assigned_to:users!assigned_to (
             full_name
           )
-        `)
-        .order('name');
+        `);
 
       if (error) throw error;
-      setCustomers(data);
+
+      // Transform the data to match our Customer type
+      const typedData = data.map(item => ({
+        ...item,
+        assigned_to: Array.isArray(item.assigned_to) ? item.assigned_to[0] : item.assigned_to
+      })) as Customer[];
+
+      setCustomers(typedData);
     } catch (error) {
       console.error('Error fetching customers:', error);
     } finally {

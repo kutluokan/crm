@@ -26,7 +26,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Get initial session
-    auth.getSession().then(({ data: { session } }) => {
+    auth.getSession().then((result) => {
+      const session = result.data.session
       setSession(session)
       updateUserProfile(session?.user || null)
       setLoading(false)
