@@ -11,39 +11,18 @@ import {
   TableRow,
   TablePagination,
   Chip,
-  IconButton,
   TextField,
-  MenuItem,
   Stack,
   Typography,
   Button,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  Select,
+  MenuItem,
 } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
-import useAuth from '../../hooks/useAuth';
-import { format } from 'date-fns';
+import { useTickets } from '../../hooks/useTickets';
 import NewTicketDialog from './NewTicketDialog';
-import { useTickets, type TicketQueryParams } from '../../hooks/useTickets';
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
-
-type Ticket = {
-  id: string;
-  created_at: string;
-  title: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  customer: {
-    name: string;
-    email: string;
-  };
-  assigned_to: {
-    full_name: string;
-  } | null;
-};
 
 const statusColors = {
   open: 'error',
@@ -60,7 +39,6 @@ const priorityColors = {
 } as const;
 
 export default function TicketList() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);

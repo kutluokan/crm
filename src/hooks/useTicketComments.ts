@@ -104,7 +104,7 @@ export function useEditComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, comment, isInternal }: Omit<EditCommentParams, 'ticketId'>) => {
+    mutationFn: async ({ id, comment, isInternal, ticketId }: EditCommentParams) => {
       const { data, error } = await supabase
         .from('ticket_comments')
         .update({
@@ -119,10 +119,10 @@ export function useEditComment() {
         throw new Error(`Error editing comment: ${error.message}`);
       }
 
-      return data;
+      return { ...data, ticketId };
     },
-    onSuccess: (_, { ticketId }) => {
-      queryClient.invalidateQueries({ queryKey: ['ticketComments', ticketId] });
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['ticketComments', result.ticketId] });
     },
   });
 }
@@ -147,10 +147,10 @@ export function useDeleteComment() {
         throw new Error(`Error deleting comment: ${error.message}`);
       }
 
-      return id;
+      return { id, ticketId };
     },
-    onSuccess: (_, { ticketId }) => {
-      queryClient.invalidateQueries({ queryKey: ['ticketComments', ticketId] });
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['ticketComments', result.ticketId] });
     },
     onError: (error) => {
       console.error('Delete mutation error:', error);

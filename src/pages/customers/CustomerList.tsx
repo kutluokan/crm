@@ -39,7 +39,6 @@ const statusColors = {
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,8 +75,6 @@ export default function CustomerList() {
       setCustomers(typedData);
     } catch (error) {
       console.error('Error fetching customers:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

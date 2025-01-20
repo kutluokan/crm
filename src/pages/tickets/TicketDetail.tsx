@@ -20,7 +20,6 @@ import {
 } from '@mui/icons-material';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
-import useAuth from '../../hooks/useAuth';
 import TicketComments from '../../components/TicketComments';
 
 interface DetailedTicket {
