@@ -27,8 +27,7 @@ export default function Layout() {
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
     { text: 'Tickets', icon: <ConfirmationNumber />, path: '/tickets' },
-    { text: 'Customers', icon: <People />, path: '/customers' },
-    { text: 'Employees', icon: <PeopleIcon />, path: '/employees' },
+    { text: 'Users', icon: <People />, path: '/users' },
   ];
 
   return (

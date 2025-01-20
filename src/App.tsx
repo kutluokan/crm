@@ -9,11 +9,8 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import TicketList from './pages/tickets/TicketList'
 import TicketDetail from './pages/tickets/TicketDetail'
-import CustomerList from './pages/customers/CustomerList'
-import CustomerDetail from './pages/customers/CustomerDetail'
-import CreateCustomer from './pages/customers/CreateCustomer'
 import CreateTicket from './pages/tickets/CreateTicket'
-import EmployeeList from './pages/employees/EmployeeList'
+import UserList from './pages/users/UserList'
 import { Box, CircularProgress, Typography } from '@mui/material'
 
 // Create a new query client instance
@@ -75,10 +72,7 @@ function App() {
                 <Route path="tickets" element={<TicketList />} />
                 <Route path="tickets/new" element={<CreateTicket />} />
                 <Route path="tickets/:id" element={<TicketDetail />} />
-                <Route path="customers" element={<CustomerList />} />
-                <Route path="customers/new" element={<CreateCustomer />} />
-                <Route path="customers/:id" element={<CustomerDetail />} />
-                <Route path="employees" element={<EmployeeList />} />
+                <Route path="users" element={<UserList />} />
               </Route>
             </Routes>
           </Router>

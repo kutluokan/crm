@@ -29,6 +29,16 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { supabase } from '../../lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+interface AuthUser {
+  id: string;
+  email: string;
+  raw_user_meta_data: {
+    full_name?: string;
+    avatar_url?: string;
+  };
+  created_at: string;
+}
+
 interface Employee {
   id: string;
   email: string;
@@ -38,87 +48,84 @@ interface Employee {
   role: 'support' | 'admin' | 'manager';
 }
 
-interface NewEmployee {
-  email: string;
-  full_name: string;
-  department: string;
-  role: 'support' | 'admin' | 'manager';
-}
-
 export default function EmployeeList() {
   const [open, setOpen] = useState(false);
-  const [newEmployee, setNewEmployee] = useState<NewEmployee>({
-    email: '',
-    full_name: '',
-    department: '',
-    role: 'support',
-  });
   const [error, setError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: employees, isLoading, error: queryError } = useQuery({
+  // Query to get all auth users
+  const { data: authUsers = [], isLoading: isLoadingUsers } = useQuery({
+    queryKey: ['auth-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('auth_users')
+        .select('*')
+        .order('created_at');
+      
+      if (error) throw error;
+      return data as AuthUser[];
+    },
+  });
+
+  // Query to get all employees
+  const { data: employees = [], isLoading: isLoadingEmployees } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
-      console.log('Fetching employees...');
       const { data, error } = await supabase
         .from('employees')
         .select('*')
         .order('full_name');
       
-      if (error) {
-        console.error('Error fetching employees:', error);
-        throw error;
-      }
-      console.log('Fetched employees:', data);
+      if (error) throw error;
       return data as Employee[];
     },
   });
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => {
-    setOpen(false);
-    setError(null);
-    setNewEmployee({
-      email: '',
-      full_name: '',
-      department: '',
-      role: 'support',
-    });
+  // Convert auth user to employee
+  const handleConvertToEmployee = async (user: AuthUser, role: Employee['role'] = 'support') => {
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .insert([
+          {
+            id: user.id,
+            email: user.email,
+            full_name: user.raw_user_meta_data.full_name || user.email,
+            avatar_url: user.raw_user_meta_data.avatar_url,
+            role: role,
+          },
+        ]);
+
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    } catch (error: any) {
+      console.error('Error converting user to employee:', error);
+      setError(error.message);
+    }
   };
 
-  const handleSubmit = async () => {
+  // Remove employee status
+  const handleRemoveEmployee = async (employeeId: string) => {
     try {
-      // First create the auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newEmployee.email,
-        password: Math.random().toString(36).slice(-12), // Generate a random password
-        options: {
-          data: {
-            full_name: newEmployee.full_name,
-          },
-        },
-      });
-
-      if (authError) throw authError;
-
-      // The employee record will be created automatically via the handle_new_user trigger
-      // We just need to update the additional fields
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('employees')
-        .update({
-          department: newEmployee.department,
-          role: newEmployee.role,
-        })
-        .eq('id', authData.user!.id);
+        .delete()
+        .eq('id', employeeId);
 
-      if (updateError) throw updateError;
-
+      if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['employees'] });
-      handleClose();
     } catch (error: any) {
-      console.error('Error creating employee:', error);
-      setError(error.message || 'Failed to create employee');
+      console.error('Error removing employee:', error);
+      setError(error.message);
     }
+  };
+
+  const isEmployee = (userId: string) => {
+    return employees.some(emp => emp.id === userId);
+  };
+
+  const getEmployeeData = (userId: string) => {
+    return employees.find(emp => emp.id === userId);
   };
 
   const roleColors = {
@@ -130,19 +137,12 @@ export default function EmployeeList() {
   return (
     <Box p={3}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5">Employees</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpen}
-        >
-          New Employee
-        </Button>
+        <Typography variant="h5">Users & Employees</Typography>
       </Stack>
 
-      {queryError && (
+      {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          Error loading employees: {queryError.message}
+          {error}
         </Alert>
       )}
 
@@ -150,101 +150,86 @@ export default function EmployeeList() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
+              <TableCell>User</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Department</TableCell>
+              <TableCell>Status</TableCell>
               <TableCell>Role</TableCell>
+              <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {isLoading ? (
+            {isLoadingUsers || isLoadingEmployees ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   <CircularProgress />
                 </TableCell>
               </TableRow>
-            ) : !employees || employees.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  No employees found
-                </TableCell>
-              </TableRow>
             ) : (
-              employees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar src={employee.avatar_url || undefined}>
-                        {employee.full_name.charAt(0)}
-                      </Avatar>
-                      {employee.full_name}
-                    </Stack>
-                  </TableCell>
-                  <TableCell>{employee.email}</TableCell>
-                  <TableCell>{employee.department || '-'}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={employee.role}
-                      size="small"
-                      color={roleColors[employee.role]}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))
+              authUsers.map((user) => {
+                const isEmployeeUser = isEmployee(user.id);
+                const employeeData = getEmployeeData(user.id);
+
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar src={user.raw_user_meta_data.avatar_url || undefined}>
+                          {(user.raw_user_meta_data.full_name || user.email).charAt(0)}
+                        </Avatar>
+                        {user.raw_user_meta_data.full_name || user.email}
+                      </Stack>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={isEmployeeUser ? "Employee" : "User"}
+                        color={isEmployeeUser ? "success" : "default"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {isEmployeeUser && employeeData && (
+                        <Chip
+                          label={employeeData.role}
+                          size="small"
+                          color={roleColors[employeeData.role]}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {isEmployeeUser ? (
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleRemoveEmployee(user.id)}
+                        >
+                          Remove Employee Status
+                        </Button>
+                      ) : (
+                        <FormControl size="small" sx={{ minWidth: 120 }}>
+                          <Select
+                            value=""
+                            displayEmpty
+                            onChange={(e) => handleConvertToEmployee(user, e.target.value as Employee['role'])}
+                          >
+                            <MenuItem value="" disabled>
+                              Make Employee
+                            </MenuItem>
+                            <MenuItem value="support">Support</MenuItem>
+                            <MenuItem value="manager">Manager</MenuItem>
+                            <MenuItem value="admin">Admin</MenuItem>
+                          </Select>
+                        </FormControl>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
       </TableContainer>
-
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>Add New Employee</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} sx={{ mt: 2 }}>
-            {error && (
-              <Typography color="error" variant="body2">
-                {error}
-              </Typography>
-            )}
-            <TextField
-              label="Full Name"
-              fullWidth
-              value={newEmployee.full_name}
-              onChange={(e) => setNewEmployee(prev => ({ ...prev, full_name: e.target.value }))}
-            />
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              value={newEmployee.email}
-              onChange={(e) => setNewEmployee(prev => ({ ...prev, email: e.target.value }))}
-            />
-            <TextField
-              label="Department"
-              fullWidth
-              value={newEmployee.department}
-              onChange={(e) => setNewEmployee(prev => ({ ...prev, department: e.target.value }))}
-            />
-            <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={newEmployee.role}
-                label="Role"
-                onChange={(e) => setNewEmployee(prev => ({ ...prev, role: e.target.value as Employee['role'] }))}
-              >
-                <MenuItem value="support">Support</MenuItem>
-                <MenuItem value="manager">Manager</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            Add Employee
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 } 
