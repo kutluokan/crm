@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -16,11 +17,13 @@ import {
   Stack,
   Typography,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { supabase } from '../../lib/supabase';
 import useAuth from '../../hooks/useAuth';
 import { format } from 'date-fns';
+import NewTicketDialog from './NewTicketDialog';
 
 type Ticket = {
   id: string;
@@ -53,20 +56,51 @@ const priorityColors = {
 
 export default function TicketList() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchTickets();
-  }, [statusFilter, priorityFilter]);
+  }, [page, rowsPerPage, statusFilter, priorityFilter, searchQuery]);
 
   const fetchTickets = async () => {
     try {
+      setLoading(true);
+      
+      // First, get the total count
+      let countQuery = supabase
+        .from('tickets')
+        .select('id', { count: 'exact' });
+
+      // Apply filters to count query
+      if (statusFilter !== 'all') {
+        countQuery = countQuery.eq('status', statusFilter);
+      }
+      if (priorityFilter !== 'all') {
+        countQuery = countQuery.eq('priority', priorityFilter);
+      }
+      if (searchQuery) {
+        countQuery = countQuery.ilike('title', `%${searchQuery}%`);
+      }
+
+      const { count: totalRecords, error: countError } = await countQuery;
+
+      if (countError) {
+        console.error('Error getting count:', countError);
+        return;
+      }
+
+      setTotalCount(totalRecords || 0);
+
+      // Then fetch the paginated data
       let query = supabase
         .from('tickets')
         .select(`
@@ -75,30 +109,38 @@ export default function TicketList() {
           title,
           status,
           priority,
-          customer:customer_id (
+          customer:customers!customer_id (
             name,
             email
           ),
-          assigned_to:users (
+          assigned_to:users!assigned_to (
             full_name
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(page * rowsPerPage, (page * rowsPerPage) + rowsPerPage - 1);
 
+      // Apply filters
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
-
       if (priorityFilter !== 'all') {
         query = query.eq('priority', priorityFilter);
+      }
+      if (searchQuery) {
+        query = query.ilike('title', `%${searchQuery}%`);
       }
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching tickets:', error);
+        return;
+      }
+
       setTickets(data as Ticket[]);
     } catch (error) {
-      console.error('Error fetching tickets:', error);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
@@ -113,16 +155,21 @@ export default function TicketList() {
     setPage(0);
   };
 
-  const filteredTickets = tickets.filter((ticket) =>
-    ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ticket.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    ticket.customer.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleNewTicketClick = () => {
+    setIsNewTicketDialogOpen(true);
+  };
 
-  const displayedTickets = filteredTickets.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const handleNewTicketClose = () => {
+    setIsNewTicketDialogOpen(false);
+  };
+
+  const handleTicketCreated = () => {
+    fetchTickets();
+  };
+
+  const handleRowClick = (ticketId: string) => {
+    navigate(`/tickets/${ticketId}`);
+  };
 
   return (
     <Box>
@@ -133,7 +180,7 @@ export default function TicketList() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => {/* TODO: Implement create ticket */}}
+          onClick={handleNewTicketClick}
         >
           New Ticket
         </Button>
@@ -194,50 +241,76 @@ export default function TicketList() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {displayedTickets.map((ticket) => (
-                <TableRow key={ticket.id} hover>
-                  <TableCell>{ticket.title}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{ticket.customer.name}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {ticket.customer.email}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={ticket.status}
-                      size="small"
-                      color={statusColors[ticket.status]}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={ticket.priority}
-                      size="small"
-                      color={priorityColors[ticket.priority]}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {ticket.assigned_to?.full_name || 'Unassigned'}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(ticket.created_at), 'MMM d, yyyy')}
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : tickets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    No tickets found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                tickets.map((ticket) => (
+                  <TableRow
+                    key={ticket.id}
+                    hover
+                    onClick={() => handleRowClick(ticket.id)}
+                    sx={{ cursor: 'pointer' }}
+                  >
+                    <TableCell>{ticket.title}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{ticket.customer.name}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {ticket.customer.email}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={ticket.status}
+                        size="small"
+                        color={statusColors[ticket.status]}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={ticket.priority}
+                        size="small"
+                        color={priorityColors[ticket.priority]}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {ticket.assigned_to?.full_name || 'Unassigned'}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(ticket.created_at), 'MMM d, yyyy')}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
+
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={filteredTickets.length}
-          rowsPerPage={rowsPerPage}
+          count={totalCount}
           page={page}
           onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25, 50]}
         />
       </Paper>
+
+      <NewTicketDialog
+        open={isNewTicketDialogOpen}
+        onClose={handleNewTicketClose}
+        onTicketCreated={handleTicketCreated}
+      />
     </Box>
   );
 } 
