@@ -1,5 +1,5 @@
 import { useEffect, useState, ReactNode } from 'react'
-import { Session, User, AuthChangeEvent } from '@supabase/supabase-js'
+import { Session, User } from '@supabase/supabase-js'
 import { auth } from '../lib/auth'
 import createAuthContext, { UserProfile } from './createAuthContext'
 

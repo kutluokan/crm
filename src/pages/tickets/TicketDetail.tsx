@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  Person as PersonIcon,
 } from '@mui/icons-material';
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';

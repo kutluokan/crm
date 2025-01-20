@@ -19,7 +19,6 @@ import {
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
-  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { formatDistanceToNow } from 'date-fns';
 import { useTicketComments, useAddComment, useEditComment, useDeleteComment, TicketComment } from '../hooks/useTicketComments';

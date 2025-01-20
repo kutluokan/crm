@@ -37,11 +37,11 @@ export function useTicketComments(ticketId: string) {
         throw new Error(`Error fetching ticket comments: ${error.message}`);
       }
 
-      // Ensure the data matches our TicketComment type
+      // Transform the data to match our TicketComment type
       const typedData = data?.map(item => ({
         ...item,
         user: Array.isArray(item.user) ? item.user[0] : item.user
-      })) as TicketComment[];
+      })) as unknown as TicketComment[];
 
       return typedData;
     },
@@ -88,7 +88,7 @@ export function useAddComment() {
       return data as TicketComment;
     },
     onSuccess: (_, { ticketId }) => {
-      queryClient.invalidateQueries(['ticketComments', ticketId]);
+      queryClient.invalidateQueries({ queryKey: ['ticketComments', ticketId] });
     },
   });
 }
@@ -122,7 +122,7 @@ export function useEditComment() {
       return data;
     },
     onSuccess: (_, { ticketId }) => {
-      queryClient.invalidateQueries(['ticketComments', ticketId]);
+      queryClient.invalidateQueries({ queryKey: ['ticketComments', ticketId] });
     },
   });
 }
@@ -150,7 +150,7 @@ export function useDeleteComment() {
       return id;
     },
     onSuccess: (_, { ticketId }) => {
-      queryClient.invalidateQueries(['ticketComments', ticketId]);
+      queryClient.invalidateQueries({ queryKey: ['ticketComments', ticketId] });
     },
     onError: (error) => {
       console.error('Delete mutation error:', error);
