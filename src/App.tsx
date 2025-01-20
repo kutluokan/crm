@@ -1,4 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ThemeProvider } from '@mui/material/styles'
+import CssBaseline from '@mui/material/CssBaseline'
+import theme from './theme'
 import AuthProvider from './contexts/AuthContext'
 import useAuth from './hooks/useAuth'
 import Layout from './components/Layout'
@@ -76,13 +80,30 @@ function AppRoutes() {
   )
 }
 
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // Data is considered fresh for 5 minutes
+      cacheTime: 1000 * 60 * 30, // Cache is kept for 30 minutes
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      retry: 1, // Only retry failed requests once
+    },
+  },
+})
+
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 

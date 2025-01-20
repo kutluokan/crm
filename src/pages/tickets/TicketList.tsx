@@ -20,10 +20,12 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
-import { supabase } from '../../lib/supabase';
 import useAuth from '../../hooks/useAuth';
 import { format } from 'date-fns';
 import NewTicketDialog from './NewTicketDialog';
+import { useTickets } from '../../hooks/useTickets';
+import { useQueryClient } from '@tanstack/react-query';
+import React from 'react';
 
 type Ticket = {
   id: string;
@@ -57,101 +59,42 @@ const priorityColors = {
 export default function TicketList() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
 
+  const { data, isLoading, isError } = useTickets({
+    page,
+    rowsPerPage,
+    statusFilter,
+    priorityFilter,
+    searchQuery,
+  });
+
+  const queryClient = useQueryClient();
+
+  // Calculate current page based on data
+  const currentPage = React.useMemo(() => {
+    if (!data?.totalCount) return 0;
+    const maxPage = Math.max(0, Math.ceil(data.totalCount / rowsPerPage) - 1);
+    return Math.min(Math.max(0, page), maxPage);
+  }, [data?.totalCount, page, rowsPerPage]);
+
+  // Reset to first page when filters change
   useEffect(() => {
-    fetchTickets();
-  }, [page, rowsPerPage, statusFilter, priorityFilter, searchQuery]);
-
-  const fetchTickets = async () => {
-    try {
-      setLoading(true);
-      
-      // First, get the total count
-      let countQuery = supabase
-        .from('tickets')
-        .select('id', { count: 'exact' });
-
-      // Apply filters to count query
-      if (statusFilter !== 'all') {
-        countQuery = countQuery.eq('status', statusFilter);
-      }
-      if (priorityFilter !== 'all') {
-        countQuery = countQuery.eq('priority', priorityFilter);
-      }
-      if (searchQuery) {
-        countQuery = countQuery.ilike('title', `%${searchQuery}%`);
-      }
-
-      const { count: totalRecords, error: countError } = await countQuery;
-
-      if (countError) {
-        console.error('Error getting count:', countError);
-        return;
-      }
-
-      setTotalCount(totalRecords || 0);
-
-      // Then fetch the paginated data
-      let query = supabase
-        .from('tickets')
-        .select(`
-          id,
-          created_at,
-          title,
-          status,
-          priority,
-          customer:customers!customer_id (
-            name,
-            email
-          ),
-          assigned_to:users!assigned_to (
-            full_name
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .range(page * rowsPerPage, (page * rowsPerPage) + rowsPerPage - 1);
-
-      // Apply filters
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-      if (priorityFilter !== 'all') {
-        query = query.eq('priority', priorityFilter);
-      }
-      if (searchQuery) {
-        query = query.ilike('title', `%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching tickets:', error);
-        return;
-      }
-
-      setTickets(data as Ticket[]);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setPage(0);
+  }, [statusFilter, priorityFilter, searchQuery, rowsPerPage]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
+    setPage(Math.max(0, newPage));
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRowsPerPage(newRowsPerPage);
     setPage(0);
   };
 
@@ -161,10 +104,6 @@ export default function TicketList() {
 
   const handleNewTicketClose = () => {
     setIsNewTicketDialogOpen(false);
-  };
-
-  const handleTicketCreated = () => {
-    fetchTickets();
   };
 
   const handleRowClick = (ticketId: string) => {
@@ -241,20 +180,26 @@ export default function TicketList() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ) : tickets.length === 0 ? (
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ color: 'error.main' }}>
+                    Error loading tickets. Please try again.
+                  </TableCell>
+                </TableRow>
+              ) : data?.tickets.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center">
                     No tickets found
                   </TableCell>
                 </TableRow>
               ) : (
-                tickets.map((ticket) => (
+                data?.tickets.map((ticket) => (
                   <TableRow
                     key={ticket.id}
                     hover
@@ -297,8 +242,8 @@ export default function TicketList() {
 
         <TablePagination
           component="div"
-          count={totalCount}
-          page={page}
+          count={data?.totalCount || 0}
+          page={currentPage}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
@@ -309,7 +254,9 @@ export default function TicketList() {
       <NewTicketDialog
         open={isNewTicketDialogOpen}
         onClose={handleNewTicketClose}
-        onTicketCreated={handleTicketCreated}
+        onTicketCreated={() => {
+          queryClient.invalidateQueries(['tickets']);
+        }}
       />
     </Box>
   );
