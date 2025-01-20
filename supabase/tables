@@ -1,0 +1,48 @@
+| table_name         | column_name       | data_type                | is_nullable | column_default               |
+| ------------------ | ----------------- | ------------------------ | ----------- | ---------------------------- |
+| customer_audit_log | id                | uuid                     | NO          | gen_random_uuid()            |
+| customer_audit_log | created_at        | timestamp with time zone | NO          | timezone('utc'::text, now()) |
+| customer_audit_log | customer_id       | uuid                     | NO          |                              |
+| customer_audit_log | changed_by        | uuid                     | NO          |                              |
+| customer_audit_log | old_values        | jsonb                    | YES         |                              |
+| customer_audit_log | new_values        | jsonb                    | YES         |                              |
+| customer_audit_log | change_type       | text                     | NO          |                              |
+| customers          | id                | uuid                     | NO          | gen_random_uuid()            |
+| customers          | created_at        | timestamp with time zone | NO          | timezone('utc'::text, now()) |
+| customers          | name              | text                     | NO          |                              |
+| customers          | company_name      | text                     | YES         |                              |
+| customers          | email             | text                     | NO          |                              |
+| customers          | phone             | text                     | YES         |                              |
+| customers          | status            | text                     | NO          | 'active'::text               |
+| customers          | notes             | text                     | YES         |                              |
+| customers          | assigned_to       | uuid                     | YES         |                              |
+| customers          | last_contacted_at | timestamp with time zone | YES         |                              |
+| customers          | updated_at        | timestamp with time zone | YES         | timezone('utc'::text, now()) |
+| customers          | address           | text                     | YES         |                              |
+| customers          | website           | text                     | YES         |                              |
+| customers          | industry          | text                     | YES         |                              |
+| customers          | custom_fields     | jsonb                    | YES         |                              |
+| employees          | id                | uuid                     | NO          |                              |
+| employees          | created_at        | timestamp with time zone | NO          | timezone('utc'::text, now()) |
+| employees          | email             | text                     | NO          |                              |
+| employees          | full_name         | text                     | NO          |                              |
+| employees          | avatar_url        | text                     | YES         |                              |
+| employees          | department        | text                     | YES         |                              |
+| employees          | role              | text                     | NO          | 'support'::text              |
+| ticket_comments    | id                | uuid                     | NO          | gen_random_uuid()            |
+| ticket_comments    | created_at        | timestamp with time zone | NO          | timezone('utc'::text, now()) |
+| ticket_comments    | ticket_id         | uuid                     | NO          |                              |
+| ticket_comments    | user_id           | uuid                     | NO          |                              |
+| ticket_comments    | comment           | text                     | NO          |                              |
+| ticket_comments    | is_internal       | boolean                  | YES         | false                        |
+| tickets            | id                | uuid                     | NO          | gen_random_uuid()            |
+| tickets            | created_at        | timestamp with time zone | NO          | timezone('utc'::text, now()) |
+| tickets            | title             | text                     | NO          |                              |
+| tickets            | description       | text                     | NO          |                              |
+| tickets            | status            | text                     | NO          | 'open'::text                 |
+| tickets            | priority          | text                     | NO          | 'medium'::text               |
+| tickets            | customer_id       | uuid                     | NO          |                              |
+| tickets            | created_by        | uuid                     | NO          |                              |
+| tickets            | assigned_to       | uuid                     | YES         |                              |
+| tickets            | resolved_at       | timestamp with time zone | YES         |                              |
+| tickets            | resolution_notes  | text                     | YES         |                              |
