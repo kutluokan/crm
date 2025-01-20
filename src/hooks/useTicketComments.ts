@@ -37,7 +37,13 @@ export function useTicketComments(ticketId: string) {
         throw new Error(`Error fetching ticket comments: ${error.message}`);
       }
 
-      return data as TicketComment[];
+      // Ensure the data matches our TicketComment type
+      const typedData = data?.map(item => ({
+        ...item,
+        user: Array.isArray(item.user) ? item.user[0] : item.user
+      })) as TicketComment[];
+
+      return typedData;
     },
   });
 }

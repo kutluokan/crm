@@ -198,9 +198,9 @@ export default function TicketComments({ ticketId }: TicketCommentsProps) {
             <Button
               variant="contained"
               type="submit"
-              disabled={!newComment.trim() || addComment.isLoading}
+              disabled={!newComment.trim() || addComment.isPending}
             >
-              {addComment.isLoading ? 'Adding...' : 'Add Comment'}
+              {addComment.isPending ? 'Adding...' : 'Add Comment'}
             </Button>
           </Stack>
         </form>
@@ -235,9 +235,9 @@ export default function TicketComments({ ticketId }: TicketCommentsProps) {
           <Button
             onClick={handleEditSubmit}
             variant="contained"
-            disabled={!editedComment.trim() || editComment.isLoading}
+            disabled={!editedComment.trim() || editComment.isPending}
           >
-            {editComment.isLoading ? 'Saving...' : 'Save'}
+            {editComment.isPending ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -264,7 +264,7 @@ export default function TicketComments({ ticketId }: TicketCommentsProps) {
         <DialogActions>
           <Button 
             onClick={() => setDeleteConfirmComment(null)}
-            disabled={deleteComment.isLoading}
+            disabled={deleteComment.isPending}
           >
             Cancel
           </Button>
@@ -272,9 +272,9 @@ export default function TicketComments({ ticketId }: TicketCommentsProps) {
             onClick={handleDeleteConfirm}
             color="error"
             variant="contained"
-            disabled={deleteComment.isLoading}
+            disabled={deleteComment.isPending}
           >
-            {deleteComment.isLoading ? 'Deleting...' : 'Delete'}
+            {deleteComment.isPending ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

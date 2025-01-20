@@ -25,24 +25,23 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Check active session
-    auth.getSession().then(session => {
+    // Get initial session
+    auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       updateUserProfile(session?.user || null)
       setLoading(false)
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        setSession(session)
-        updateUserProfile(session?.user || null)
-      }
-    )
+    const {
+      data: { subscription },
+    } = auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      updateUserProfile(session?.user || null)
+      setLoading(false)
+    })
 
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const value = {
