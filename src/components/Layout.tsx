@@ -3,6 +3,7 @@ import { Dashboard, ConfirmationNumber, People, Logout } from '@mui/icons-materi
 import { Link, Outlet } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { useState } from 'react';
+import { People as PeopleIcon } from '@mui/icons-material';
 
 const drawerWidth = 240;
 
@@ -22,6 +23,13 @@ export default function Layout() {
     handleClose();
     signOut();
   };
+
+  const menuItems = [
+    { text: 'Dashboard', icon: <Dashboard />, path: '/' },
+    { text: 'Tickets', icon: <ConfirmationNumber />, path: '/tickets' },
+    { text: 'Customers', icon: <People />, path: '/customers' },
+    { text: 'Employees', icon: <PeopleIcon />, path: '/employees' },
+  ];
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -93,24 +101,14 @@ export default function Layout() {
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
-            <ListItem component={Link} to="/" sx={{ color: 'inherit', textDecoration: 'none' }}>
-              <ListItemIcon>
-                <Dashboard />
-              </ListItemIcon>
-              <ListItemText primary="Dashboard" />
-            </ListItem>
-            <ListItem component={Link} to="/tickets" sx={{ color: 'inherit', textDecoration: 'none' }}>
-              <ListItemIcon>
-                <ConfirmationNumber />
-              </ListItemIcon>
-              <ListItemText primary="Tickets" />
-            </ListItem>
-            <ListItem component={Link} to="/customers" sx={{ color: 'inherit', textDecoration: 'none' }}>
-              <ListItemIcon>
-                <People />
-              </ListItemIcon>
-              <ListItemText primary="Customers" />
-            </ListItem>
+            {menuItems.map((item) => (
+              <ListItem component={Link} to={item.path} key={item.path} sx={{ color: 'inherit', textDecoration: 'none' }}>
+                <ListItemIcon>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItem>
+            ))}
           </List>
         </Box>
       </Drawer>

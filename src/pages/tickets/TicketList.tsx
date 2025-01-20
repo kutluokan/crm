@@ -103,7 +103,7 @@ export default function TicketList() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={handleNewTicketClick}
+          onClick={() => navigate('/tickets/new')}
         >
           New Ticket
         </Button>
