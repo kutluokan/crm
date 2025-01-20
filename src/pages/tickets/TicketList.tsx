@@ -22,6 +22,7 @@ import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import { useTickets } from '../../hooks/useTickets';
 import NewTicketDialog from './NewTicketDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
 import React from 'react';
 
 const statusColors = {
@@ -238,7 +239,7 @@ export default function TicketList() {
         open={isNewTicketOpen}
         onClose={handleNewTicketClose}
         onTicketCreated={() => {
-          queryClient.invalidateQueries(['tickets']);
+          queryClient.invalidateQueries({ queryKey: ['tickets'] });
         }}
       />
     </Box>

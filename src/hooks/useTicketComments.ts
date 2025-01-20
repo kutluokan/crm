@@ -37,11 +37,23 @@ export function useTicketComments(ticketId: string) {
         throw new Error(`Error fetching ticket comments: ${error.message}`);
       }
 
+      if (!data) return [];
+
       // Transform the data to match our TicketComment type
-      const typedData = data?.map(item => ({
-        ...item,
-        user: Array.isArray(item.user) ? item.user[0] : item.user
-      })) as TicketComment[];
+      const typedData = data.map(item => {
+        const userInfo = Array.isArray(item.user) ? item.user[0] : item.user;
+        return {
+          id: item.id,
+          created_at: item.created_at,
+          ticket_id: item.ticket_id,
+          user_id: item.user_id,
+          comment: item.comment,
+          is_internal: item.is_internal,
+          user: {
+            full_name: userInfo.full_name
+          }
+        } satisfies TicketComment;
+      });
 
       return typedData;
     },
@@ -54,6 +66,10 @@ type AddCommentParams = {
   isInternal: boolean;
   userId: string;
 };
+
+interface UserData {
+  full_name: string;
+}
 
 export function useAddComment() {
   const queryClient = useQueryClient();
@@ -85,7 +101,26 @@ export function useAddComment() {
         throw new Error(`Error adding comment: ${error.message}`);
       }
 
-      return data as TicketComment;
+      if (!data) {
+        throw new Error('No data returned from insert');
+      }
+
+      const userData = Array.isArray(data.user) ? data.user[0] : data.user as UserData;
+
+      // Transform the data to match our TicketComment type
+      const transformedData = {
+        id: data.id,
+        created_at: data.created_at,
+        ticket_id: data.ticket_id,
+        user_id: data.user_id,
+        comment: data.comment,
+        is_internal: data.is_internal,
+        user: {
+          full_name: userData.full_name
+        }
+      } satisfies TicketComment;
+
+      return transformedData;
     },
     onSuccess: (_, { ticketId }) => {
       queryClient.invalidateQueries({ queryKey: ['ticketComments', ticketId] });
