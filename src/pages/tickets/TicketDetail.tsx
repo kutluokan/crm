@@ -13,6 +13,7 @@ import {
   MenuItem,
   Divider,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -21,6 +22,7 @@ import {
 import { supabase } from '../../lib/supabase';
 import { format } from 'date-fns';
 import useAuth from '../../hooks/useAuth';
+import TicketComments from '../../components/TicketComments';
 
 interface DetailedTicket {
   id: string;
@@ -44,6 +46,11 @@ interface DetailedTicket {
   };
 }
 
+interface User {
+  id: string;
+  full_name: string;
+}
+
 const statusColors = {
   open: 'error',
   in_progress: 'warning',
@@ -65,7 +72,7 @@ export default function TicketDetail() {
   const [ticket, setTicket] = useState<DetailedTicket | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [users, setUsers] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     fetchTicket();
@@ -74,6 +81,8 @@ export default function TicketDetail() {
 
   const fetchTicket = async () => {
     try {
+      if (!id) return;
+
       const { data, error } = await supabase
         .from('tickets')
         .select(`
@@ -104,7 +113,7 @@ export default function TicketDetail() {
       setTicket(data);
     } catch (error) {
       console.error('Error fetching ticket:', error);
-      setError('Failed to load ticket details');
+      setError('Error loading ticket details');
     } finally {
       setLoading(false);
     }
@@ -132,9 +141,9 @@ export default function TicketDetail() {
         .eq('id', id);
 
       if (error) throw error;
-      fetchTicket();
+      setTicket(ticket ? { ...ticket, status: newStatus as any } : null);
     } catch (error) {
-      console.error('Error updating ticket status:', error);
+      console.error('Error updating status:', error);
     }
   };
 
@@ -146,27 +155,45 @@ export default function TicketDetail() {
         .eq('id', id);
 
       if (error) throw error;
-      fetchTicket();
+
+      const assignedUser = users.find(user => user.id === userId);
+      setTicket(ticket ? {
+        ...ticket,
+        assigned_to: userId ? { id: userId, full_name: assignedUser?.full_name || '' } : null
+      } : null);
     } catch (error) {
-      console.error('Error updating ticket assignee:', error);
+      console.error('Error updating assignee:', error);
     }
   };
 
-  if (loading) return <Typography>Loading...</Typography>;
-  if (error) return <Alert severity="error">{error}</Alert>;
-  if (!ticket) return <Alert severity="error">Ticket not found</Alert>;
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !ticket) {
+    return (
+      <Box p={2}>
+        <Alert severity="error">{error || 'Ticket not found'}</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate('/tickets')}
-        sx={{ mb: 3 }}
-      >
-        Back to Tickets
-      </Button>
+      <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/tickets')}>
+          Back to Tickets
+        </Button>
+        <Typography variant="h5" component="h1">
+          {ticket.title}
+        </Typography>
+      </Stack>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 3, mb: 3 }}>
         <Stack spacing={3}>
           {/* Header */}
           <Stack
@@ -261,6 +288,10 @@ export default function TicketDetail() {
           </Box>
         </Stack>
       </Paper>
+
+      <Box mt={4}>
+        <TicketComments ticketId={id} />
+      </Box>
     </Box>
   );
 } 
