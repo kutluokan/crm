@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -18,12 +18,15 @@ import {
   Typography,
   Button,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import { Add as AddIcon, Search as SearchIcon } from '@mui/icons-material';
 import useAuth from '../../hooks/useAuth';
 import { format } from 'date-fns';
 import NewTicketDialog from './NewTicketDialog';
-import { useTickets } from '../../hooks/useTickets';
+import { useTickets, type TicketQueryParams } from '../../hooks/useTickets';
 import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
 
@@ -61,17 +64,17 @@ export default function TicketList() {
   const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isNewTicketDialogOpen, setIsNewTicketDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [status, setStatus] = useState<string>('');
+  const [priority, setPriority] = useState<string>('');
+  const [isNewTicketOpen, setIsNewTicketOpen] = useState(false);
 
   const { data, isLoading, isError } = useTickets({
     page,
     rowsPerPage,
-    statusFilter,
-    priorityFilter,
-    searchQuery,
+    searchTerm,
+    status,
+    priority,
   });
 
   const queryClient = useQueryClient();
@@ -83,31 +86,33 @@ export default function TicketList() {
     return Math.min(Math.max(0, page), maxPage);
   }, [data?.totalCount, page, rowsPerPage]);
 
-  // Reset to first page when filters change
-  useEffect(() => {
-    setPage(0);
-  }, [statusFilter, priorityFilter, searchQuery, rowsPerPage]);
-
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(Math.max(0, newPage));
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    setRowsPerPage(newRowsPerPage);
+    setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   const handleNewTicketClick = () => {
-    setIsNewTicketDialogOpen(true);
+    setIsNewTicketOpen(true);
   };
 
   const handleNewTicketClose = () => {
-    setIsNewTicketDialogOpen(false);
+    setIsNewTicketOpen(false);
   };
 
   const handleRowClick = (ticketId: string) => {
     navigate(`/tickets/${ticketId}`);
+  };
+
+  const getStatusColor = (status: keyof typeof statusColors) => {
+    return statusColors[status] || 'default';
+  };
+
+  const getPriorityColor = (priority: keyof typeof priorityColors) => {
+    return priorityColors[priority] || 'default';
   };
 
   return (
@@ -130,8 +135,8 @@ export default function TicketList() {
           <TextField
             label="Search"
             size="small"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
               startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
             }}
@@ -141,8 +146,8 @@ export default function TicketList() {
             select
             label="Status"
             size="small"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
             sx={{ minWidth: 120 }}
           >
             <MenuItem value="all">All Status</MenuItem>
@@ -155,8 +160,8 @@ export default function TicketList() {
             select
             label="Priority"
             size="small"
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
             sx={{ minWidth: 120 }}
           >
             <MenuItem value="all">All Priority</MenuItem>
@@ -217,14 +222,14 @@ export default function TicketList() {
                       <Chip
                         label={ticket.status}
                         size="small"
-                        color={statusColors[ticket.status]}
+                        color={getStatusColor(ticket.status as keyof typeof statusColors)}
                       />
                     </TableCell>
                     <TableCell>
                       <Chip
                         label={ticket.priority}
                         size="small"
-                        color={priorityColors[ticket.priority]}
+                        color={getPriorityColor(ticket.priority as keyof typeof priorityColors)}
                       />
                     </TableCell>
                     <TableCell>
@@ -252,7 +257,7 @@ export default function TicketList() {
       </Paper>
 
       <NewTicketDialog
-        open={isNewTicketDialogOpen}
+        open={isNewTicketOpen}
         onClose={handleNewTicketClose}
         onTicketCreated={() => {
           queryClient.invalidateQueries(['tickets']);

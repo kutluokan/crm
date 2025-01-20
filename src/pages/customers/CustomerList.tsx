@@ -25,7 +25,7 @@ interface Customer {
   email: string;
   phone: string;
   company_name: string;
-  status: string;
+  status: 'active' | 'inactive' | 'lead';
   assigned_to: {
     full_name: string;
   };
@@ -81,7 +81,7 @@ export default function CustomerList() {
     }
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 

@@ -104,7 +104,7 @@ export function useEditComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, comment, isInternal }: EditCommentParams) => {
+    mutationFn: async ({ id, comment, isInternal }: Omit<EditCommentParams, 'ticketId'>) => {
       const { data, error } = await supabase
         .from('ticket_comments')
         .update({

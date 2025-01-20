@@ -65,7 +65,7 @@ const priorityColors = {
 } as const;
 
 export default function TicketDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [ticket, setTicket] = useState<DetailedTicket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,7 +108,16 @@ export default function TicketDetail() {
         .single();
 
       if (error) throw error;
-      setTicket(data);
+
+      // Transform the data to match our DetailedTicket type
+      const transformedData = {
+        ...data,
+        customer: Array.isArray(data.customer) ? data.customer[0] : data.customer,
+        assigned_to: Array.isArray(data.assigned_to) ? data.assigned_to[0] : data.assigned_to,
+        created_by: Array.isArray(data.created_by) ? data.created_by[0] : data.created_by
+      } as DetailedTicket;
+
+      setTicket(transformedData);
     } catch (error) {
       console.error('Error fetching ticket:', error);
       setError('Error loading ticket details');
